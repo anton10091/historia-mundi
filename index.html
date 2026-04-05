@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Historia Mundi — Мир 1700</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root {
+  --bg:#f8f7f4; --surface:#fff; --surface2:#f4f3f0; --surface3:#eeecea;
+  --border:#e2e0db; --border2:#d0cec9;
+  --text:#1a1917; --text2:#4a4845; --text3:#8a8785;
+  --accent:#2563eb; --green:#16a34a; --green-bg:#f0fdf4; --green-border:#bbf7d0;
+  --red:#dc2626; --red-bg:#fef2f2; --red-border:#fecaca;
+  --amber:#d97706; --amber-bg:#fffbeb;
+  --panel:480px; --radius:10px;
+  --shadow:0 1px 3px rgba(0,0,0,.08);
+  --shadow-lg:0 4px 16px rgba(0,0,0,.1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;font-size:14px;line-height:1.5}
+header{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;z-index:2000;position:relative}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px}
+.logo-text{font-family:'Playfair Display',serif;font-size:17px;font-weight:600}
+.logo-sub{font-size:11px;color:var(--text3)}
+.header-center{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px}
+.year-pill{background:var(--accent);color:#fff;font-size:13px;font-weight:600;padding:4px 14px;border-radius:100px}
+.header-hint{font-size:12px;color:var(--text3)}
+.count-pill{font-size:12px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:3px 10px}
+.main{display:flex;flex:1;overflow:hidden}
+#map{flex:1;position:relative;background:#dde8f0}
+.leaflet-container{background:#dde8f0!important}
+.leaflet-control-zoom{border:1px solid var(--border)!important;border-radius:8px!important;box-shadow:var(--shadow)!important;overflow:hidden}
+.leaflet-control-zoom a{background:var(--surface)!important;color:var(--text)!important;border-bottom:1px solid var(--border)!important;width:28px!important;height:28px!important;line-height:28px!important}
+.leaflet-control-zoom a:hover{background:var(--surface2)!important}
+.leaflet-control-attribution{display:none!important}
+.leaflet-tooltip{background:var(--surface)!important;border:1px solid var(--border)!important;border-radius:6px!important;color:var(--text)!important;font-family:'Inter',sans-serif!important;font-size:12px!important;font-weight:500!important;padding:5px 10px!important;box-shadow:var(--shadow)!important}
+.leaflet-tooltip::before{display:none!important}
+.c-dot{width:12px;height:12px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 1.5px rgba(0,0,0,.2),var(--shadow);transition:transform .15s,box-shadow .15s;cursor:pointer}
+.c-dot:hover,.c-dot.active{transform:scale(1.5);box-shadow:0 0 0 2px #fff,0 0 0 4px currentColor,var(--shadow-lg)}
+#map-hint{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:8px 18px;font-size:12px;color:var(--text3);box-shadow:var(--shadow);z-index:1000;pointer-events:none;transition:opacity .3s;white-space:nowrap}
+#map-hint.hidden{opacity:0}
+#panel{width:var(--panel);background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transform:translateX(100%);transition:transform .35s cubic-bezier(.22,1,.36,1);flex-shrink:0}
+#panel.open{transform:translateX(0)}
+.p-header{padding:18px 20px 0;flex-shrink:0;border-bottom:1px solid var(--border)}
+.p-flag-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.p-flag{width:52px;height:36px;border-radius:6px;border:1px solid var(--border);font-size:26px;display:flex;align-items:center;justify-content:center}
+.p-title-block{flex:1;margin-left:12px}
+.p-name{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;line-height:1.2;letter-spacing:-.3px}
+.p-tagline{font-size:12px;color:var(--text3);margin-top:3px;font-style:italic}
+.close-btn{width:28px;height:28px;background:var(--surface2);border:1px solid var(--border);border-radius:50%;color:var(--text3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;margin-left:8px}
+.close-btn:hover{background:var(--surface3);color:var(--text)}
+.quick-stats{display:flex}
+.qs-item{flex:1;padding:8px 12px 12px;text-align:center;border-right:1px solid var(--border)}
+.qs-item:last-child{border-right:none}
+.qs-val{font-size:15px;font-weight:600;font-family:'Playfair Display',serif}
+.qs-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.tabs{display:flex;border-bottom:1px solid var(--border);padding:0 4px;background:var(--surface);flex-shrink:0;overflow-x:auto}
+.tabs::-webkit-scrollbar{display:none}
+.tab{font-size:12px;font-weight:500;color:var(--text3);padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.tab:hover{color:var(--text2)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.p-body{flex:1;overflow-y:auto;padding:16px 20px 24px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.p-body::-webkit-scrollbar{width:4px}
+.p-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.section{margin-bottom:20px}
+.section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:10px}
+.desc-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius);padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px}
+.sc-label{font-size:11px;color:var(--text3);margin-bottom:4px}
+.sc-val{font-size:17px;font-weight:600;font-family:'Playfair Display',serif;line-height:1.2}
+.sc-note{font-size:11px;color:var(--text3);margin-top:2px}
+.reliability{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 6px;border-radius:100px;margin-top:4px}
+.rel-high{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.rel-mid{background:var(--amber-bg);color:var(--amber);border:1px solid #fde68a}
+.rel-low{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.prog-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.prog-label{font-size:13px;color:var(--text2);flex:1}
+.prog-val{font-size:12px;font-weight:600;min-width:36px;text-align:right}
+.prog-bg{width:100%;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;margin-bottom:12px}
+.prog-fill{height:6px;border-radius:3px;transition:width .6s ease}
+.chart-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.chart-inner{display:flex;align-items:center;gap:16px}
+.donut-wrap{position:relative;width:120px;height:120px;flex-shrink:0}
+.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:var(--text3);text-align:center;line-height:1.3}
+.legend-list{flex:1;display:flex;flex-direction:column;gap:7px}
+.li-row{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2)}
+.li-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.li-pct{margin-left:auto;font-weight:600;font-size:12px}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.res-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px}
+.res-icon{font-size:20px}
+.res-name{font-size:12px;color:var(--text2);margin-bottom:4px}
+.res-stars{display:flex;gap:2px}
+.res-star{width:8px;height:8px;border-radius:2px}
+.class-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px}
+.cc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.cc-name{font-size:13px;font-weight:500}
+.cc-pct{font-size:13px;font-weight:600;color:var(--accent)}
+.cc-count{font-size:11px;color:var(--text3)}
+.cc-bar-bg{height:4px;background:var(--surface3);border-radius:2px;margin-bottom:6px;overflow:hidden}
+.cc-bar{height:4px;background:var(--accent);border-radius:2px;transition:width .7s ease}
+.cc-desc{font-size:12px;color:var(--text3);font-style:italic}
+.rel-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.rel-name{font-size:13px;color:var(--text)}
+.rel-pct-big{font-size:13px;font-weight:600;color:var(--accent)}
+.rel-note{font-size:11px;color:var(--text3);margin-top:2px}
+.trade-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.trade-col-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.trade-col-title.exp{color:var(--green)}
+.trade-col-title.imp{color:#7c3aed}
+.trade-item{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;margin-bottom:6px}
+.ti-name{font-size:12px;font-weight:500}
+.ti-note{font-size:11px;color:var(--text3);margin-top:1px}
+.timeline{position:relative;padding-left:22px}
+.timeline::before{content:'';position:absolute;left:7px;top:4px;bottom:4px;width:1.5px;background:var(--border2);border-radius:1px}
+.tl-item{position:relative;margin-bottom:16px}
+.tl-dot{position:absolute;left:-18px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 0 0 1.5px var(--accent)}
+.tl-dot.high{background:var(--red);box-shadow:0 0 0 1.5px var(--red)}
+.tl-year{font-size:11px;font-weight:600;color:var(--accent);margin-bottom:2px}
+.tl-event{font-size:13px;color:var(--text2);line-height:1.5}
+.sw-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sw-card{border-radius:8px;padding:12px;border:1px solid}
+.sw-card.str{background:var(--green-bg);border-color:var(--green-border)}
+.sw-card.weak{background:var(--red-bg);border-color:var(--red-border)}
+.sw-head{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.sw-card.str .sw-head{color:var(--green)}
+.sw-card.weak .sw-head{color:var(--red)}
+.sw-item{font-size:12px;color:var(--text2);margin-bottom:5px;display:flex;align-items:flex-start;gap:5px}
+.sw-item::before{flex-shrink:0;margin-top:1px;font-weight:600}
+.sw-card.str .sw-item::before{content:'✓';color:var(--green)}
+.sw-card.weak .sw-item::before{content:'✗';color:var(--red)}
+.wage-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.wage-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.wage-country{font-size:12px;color:var(--text2);width:100px;flex-shrink:0}
+.wage-bar-bg{flex:1;height:8px;background:var(--surface3);border-radius:4px;overflow:hidden}
+.wage-bar{height:8px;border-radius:4px;transition:width .6s ease}
+.wage-val{font-size:12px;font-weight:600;min-width:40px;text-align:right}
+.loading{display:flex;align-items:center;justify-content:center;height:200px;color:var(--text3);font-size:13px}
+.error-box{background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:12px;font-size:13px;color:var(--red)}
+.src-box{font-size:11px;color:var(--text3);line-height:1.7;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🌍</div>
+    <div>
+      <div class="logo-text">Historia Mundi</div>
+      <div class="logo-sub">Историческая платформа</div>
+    </div>
+  </div>
+  <div class="header-center">
+    <span class="year-pill">1700 год</span>
+    <span class="header-hint">Накануне промышленной революции</span>
+  </div>
+  <div class="header-right">
+    <span class="count-pill" id="country-count">Загрузка...</span>
+  </div>
+</header>
+
+<div class="main">
+  <div id="map">
+    <div id="map-hint">🖱️ Нажмите на маркер страны для изучения</div>
+  </div>
+  <div id="panel">
+    <div class="p-header">
+      <div class="p-flag-row">
+        <span class="p-flag" id="p-flag"></span>
+        <div class="p-title-block">
+          <div class="p-name" id="p-name"></div>
+          <div class="p-tagline" id="p-tagline"></div>
+        </div>
+        <button class="close-btn" onclick="closePanel()">✕</button>
+      </div>
+      <div class="quick-stats" id="quick-stats"></div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" data-tab="overview">Обзор</div>
+      <div class="tab" data-tab="economy">Экономика</div>
+      <div class="tab" data-tab="society">Общество</div>
+      <div class="tab" data-tab="religion">Религия</div>
+      <div class="tab" data-tab="trade">Торговля</div>
+      <div class="tab" data-tab="history">История</div>
+      <div class="tab" data-tab="analysis">Анализ</div>
+    </div>
+    <div class="p-body" id="p-body">
+      <div class="loading">Выберите страну на карте</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const SB_URL = 'https://ftembofszbeiguvyqixt.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0ZW1ib2ZzemJlaWd1dnlxaXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODg0NzAsImV4cCI6MjA5MDg2NDQ3MH0.4SJtFkfFG6pc6KVm-OLfPrxPMhCYogiPv_nX2-nzcVU';
+
+async function sb(table, q='') {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?${q}`, {
+    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+  });
+  if (!r.ok) throw new Error(`${r.status}`);
+  return r.json();
+}
+
+let activeId = null, currentData = null, currentTab = 'overview', pieChart = null;
+
+const map = L.map('map', { center:[30,15], zoom:2, minZoom:2, maxZoom:6 });
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+async function loadMarkers() {
+  try {
+    const countries = await sb('countries','select=id,name,flag,lat,lng,color,tagline');
+    document.getElementById('country-count').textContent = `${countries.length} держав`;
+    countries.forEach(c => {
+      const icon = L.divIcon({
+        className:'',
+        html:`<div class="c-dot" id="dot-${c.id}" style="background:${c.color};color:${c.color}"></div>`,
+        iconSize:[12,12], iconAnchor:[6,6]
+      });
+      const m = L.marker([c.lat,c.lng],{icon}).addTo(map);
+      m.bindTooltip(`<b>${c.name}</b> — ${c.tagline}`,{direction:'top',offset:[0,-8]});
+      m.on('click',()=>openCountry(c.id));
+    });
+  } catch(e) {
+    document.getElementById('country-count').textContent='Ошибка';
+  }
+}
+loadMarkers();
+
+async function openCountry(id) {
+  if (activeId) { const p=document.getElementById(`dot-${activeId}`); if(p) p.classList.remove('active'); }
+  activeId = id;
+  const dot = document.getElementById(`dot-${id}`);
+  if (dot) dot.classList.add('active');
+  document.getElementById('map-hint').classList.add('hidden');
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('p-body').innerHTML = '<div class="loading">Загрузка...</div>';
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector('.tab[data-tab="overview"]').classList.add('active');
+  currentTab = 'overview';
+
+  try {
+    const [country,sectors,resources,classes,religions,exps,imps,timeline,strengths,weaknesses] = await Promise.all([
+      sb('countries',`select=*&id=eq.${id}`),
+      sb('economy_sectors',`select=*&country_id=eq.${id}&order=sort_order`),
+      sb('resources',`select=*&country_id=eq.${id}`),
+      sb('social_classes',`select=*&country_id=eq.${id}&order=sort_order`),
+      sb('religions',`select=*&country_id=eq.${id}`),
+      sb('trade',`select=*&country_id=eq.${id}&type=eq.export&order=importance.desc`),
+      sb('trade',`select=*&country_id=eq.${id}&type=eq.import&order=importance.desc`),
+      sb('timeline',`select=*&country_id=eq.${id}&order=year`),
+      sb('strengths',`select=*&country_id=eq.${id}`),
+      sb('weaknesses',`select=*&country_id=eq.${id}`)
+    ]);
+    currentData = {...country[0],sectors,resources,classes,religions,exports:exps,imports:imps,timeline,strengths,weaknesses};
+    const c = currentData;
+    document.getElementById('p-flag').textContent = c.flag||'🌍';
+    document.getElementById('p-name').textContent = c.name;
+    document.getElementById('p-tagline').textContent = c.tagline;
+    document.getElementById('quick-stats').innerHTML = `
+      <div class="qs-item"><div class="qs-val">${fp(c.population)}</div><div class="qs-label">Население</div></div>
+      <div class="qs-item"><div class="qs-val">${c.wage_silver||'—'} г</div><div class="qs-label">Серебро/день</div></div>
+      <div class="qs-item"><div class="qs-val">${c.literacy_men||'—'}%</div><div class="qs-label">Грамотность м.</div></div>
+      <div class="qs-item"><div class="qs-val">${c.life_expectancy||'—'} л</div><div class="qs-label">Жизнь</div></div>`;
+    renderTab('overview');
+  } catch(e) {
+    document.getElementById('p-body').innerHTML=`<div class="error-box">Ошибка: ${e.message}</div>`;
+  }
+}
+
+function closePanel() {
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('map-hint').classList.remove('hidden');
+  if (activeId) { const d=document.getElementById(`dot-${activeId}`); if(d) d.classList.remove('active'); activeId=null; }
+  if (pieChart) { pieChart.destroy(); pieChart=null; }
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    this.classList.add('active');
+    currentTab = this.dataset.tab;
+    if (currentData) renderTab(currentTab);
+  });
+});
+
+const WAGES = [
+  {n:'Нидерланды',w:12.5,c:'#f97316'},{n:'Англия',w:10.5,c:'#2563eb'},
+  {n:'Колонии США',w:9.0,c:'#2563eb'},{n:'Швеция',w:7.5,c:'#2563eb'},
+  {n:'Франция',w:7.0,c:'#dc2626'},{n:'Пруссия',w:6.5,c:'#374151'},
+  {n:'Австрия',w:6.0,c:'#dc2626'},{n:'Испания',w:5.5,c:'#f59e0b'},
+  {n:'Португалия',w:5.0,c:'#16a34a'},{n:'Османы',w:4.0,c:'#dc2626'},
+  {n:'Персия',w:3.0,c:'#7c3aed'},{n:'Япония',w:2.5,c:'#dc2626'},
+  {n:'Россия',w:2.0,c:'#16a34a'},{n:'Индия',w:2.0,c:'#f97316'},
+  {n:'Китай',w:1.5,c:'#d97706'}
+].sort((a,b)=>b.w-a.w);
+
+function renderTab(name) {
+  if (pieChart) { pieChart.destroy(); pieChart=null; }
+  if (!currentData) return;
+  const c = currentData;
+  const body = document.getElementById('p-body');
+
+  if (name==='overview') {
+    body.innerHTML = `
+      <div class="desc-box">${c.description||''}</div>
+      <div class="section">
+        <div class="section-title">Демография</div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="sc-label">Население</div><div class="sc-val">${fp(c.population)}</div><div class="sc-note">${c.population_note||''}</div>${rb(c.population_reliability)}</div>
+          <div class="stat-card"><div class="sc-label">Плотность/км²</div><div class="sc-val">${c.pop_density||'—'}</div></div>
+          <div class="stat-card"><div class="sc-label">Средний возраст</div><div class="sc-val">${c.avg_age||'—'} лет</div></div>
+          <div class="stat-card"><div class="sc-label">Продолж. жизни</div><div class="sc-val">${c.life_expectancy||'—'} лет</div></div>
+          <div class="stat-card"><div class="sc-label">Детская смертность</div><div class="sc-val">${c.child_mortality||'—'}%</div><div class="sc-note">до 5 лет</div></div>
+          <div class="stat-card"><div class="sc-label">Урбанизация</div><div class="sc-val">${c.urban_pct||'—'}%</div></div>
+        </div>
+      </div>
+      ${c.main_city?`<div class="section"><div class="section-title">Крупнейший город</div><div class="stat-grid"><div class="stat-card"><div class="sc-label">Город</div><div class="sc-val" style="font-size:15px">${c.main_city}</div></div><div class="stat-card"><div class="sc-label">Население</div><div class="sc-val">${fp(c.main_city_pop)}</div></div></div></div>`:''}
+      <div class="section">
+        <div class="section-title">Экономика</div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="sc-label">ВВП на душу</div><div class="sc-val">$${c.gdp_per_capita||'—'}</div><div class="sc-note">${c.gdp_note||''}</div>${rb(c.gdp_reliability)}</div>
+          <div class="stat-card"><div class="sc-label">Зарплата г/день</div><div class="sc-val">${c.wage_silver||'—'} г</div><div class="sc-note">${c.wage_note||''}</div>${rb(c.wage_reliability)}</div>
+          <div class="stat-card"><div class="sc-label">Хлеб на зарплату</div><div class="sc-val">${c.bread_kg_per_day||'—'} кг</div><div class="sc-note">в день</div></div>
+          <div class="stat-card"><div class="sc-label">Форма правления</div><div class="sc-val" style="font-size:12px;line-height:1.4">${c.government_type||'—'}</div></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Образование</div>
+        <div class="prog-row"><span class="prog-label">Грамотность мужчин</span><span class="prog-val">${c.literacy_men||0}%</span></div>
+        <div class="prog-bg"><div class="prog-fill" style="width:${c.literacy_men||0}%;background:var(--accent)"></div></div>
+        <div class="prog-row"><span class="prog-label">Грамотность женщин</span><span class="prog-val">${c.literacy_women||0}%</span></div>
+        <div class="prog-bg"><div class="prog-fill" style="width:${c.literacy_women||0}%;background:#7c3aed"></div></div>
+        <div class="stat-grid" style="margin-top:8px">
+          <div class="stat-card"><div class="sc-label">Университеты</div><div class="sc-val">${c.universities||0}</div></div>
+          <div class="stat-card"><div class="sc-label">Обязат. образование</div><div class="sc-val">${c.compulsory_education?'✅ Да':'❌ Нет'}</div></div>
+        </div>
+        ${rb(c.literacy_reliability)}
+      </div>
+      <div class="section">
+        <div class="section-title">Военная мощь</div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="sc-label">Армия</div><div class="sc-val">${c.army?c.army+' тыс.':'—'}</div></div>
+          <div class="stat-card"><div class="sc-label">Флот</div><div class="sc-val">${c.navy?c.navy+' кор.':'—'}</div></div>
+          <div class="stat-card"><div class="sc-label">Колонии</div><div class="sc-val">${c.colonies||0}</div></div>
+          <div class="stat-card"><div class="sc-label">Соц. мобильность</div><div class="sc-val" style="font-size:13px">${c.social_mobility||'—'}</div></div>
+        </div>
+      </div>
+      <div class="section"><div class="section-title">Источники</div><div class="src-box">${c.data_sources||'Maddison Project Database 2020'}</div></div>`;
+  }
+
+  else if (name==='economy') {
+    body.innerHTML = `
+      <div class="section">
+        <div class="section-title">Структура ВВП</div>
+        <div class="chart-wrap">
+          <div class="chart-inner">
+            <div class="donut-wrap"><canvas id="pieC" width="120" height="120"></canvas><div class="donut-center">Секторы<br>ВВП</div></div>
+            <ul class="legend-list">
+              ${c.sectors.map(s=>`<li class="li-row"><span class="li-dot" style="background:${s.color}"></span>${s.name}<span class="li-pct">${s.pct}%</span></li>`).join('')}
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Природные ресурсы</div>
+        <div class="res-grid">
+          ${c.resources.map(r=>`<div class="res-card"><span class="res-icon">${r.icon}</span><div><div class="res-name">${r.name}</div><div class="res-stars">${[1,2,3,4,5].map(i=>`<div class="res-star" style="background:${i<=r.level?r.color:'#e5e7eb'}"></div>`).join('')}</div></div></div>`).join('')}
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Зарплаты в мире (г серебра/день)</div>
+        <div class="wage-wrap">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Неквалифицированный рабочий • 1700 год • по Роберту Аллену</div>
+          ${WAGES.map(w=>`<div class="wage-row"><span class="wage-country" style="${w.n===c.name?'font-weight:600;color:var(--accent)':''}">${w.n}</span><div class="wage-bar-bg"><div class="wage-bar" style="width:${(w.w/12.5*100).toFixed(0)}%;background:${w.n===c.name?'var(--accent)':w.c+'66'}"></div></div><span class="wage-val" style="${w.n===c.name?'color:var(--accent)':''}">${w.w}</span></div>`).join('')}
+        </div>
+      </div>`;
+    setTimeout(()=>{
+      const ctx=document.getElementById('pieC');
+      if(ctx&&c.sectors.length){
+        pieChart=new Chart(ctx,{type:'doughnut',data:{labels:c.sectors.map(s=>s.name),datasets:[{data:c.sectors.map(s=>s.pct),backgroundColor:c.sectors.map(s=>s.color),borderWidth:2,borderColor:'#fff'}]},options:{responsive:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed}%`}}}}});
+      }
+    },30);
+  }
+
+  else if (name==='society') {
+    body.innerHTML = `
+      <div class="section">
+        <div class="section-title">Социальные классы</div>
+        ${c.classes.map(cl=>`<div class="class-card"><div class="cc-header"><span class="cc-name">${cl.name}</span><span class="cc-pct">${cl.pct}%</span></div>${cl.count_approx?`<div class="cc-count" style="margin-bottom:4px">≈ ${fp(cl.count_approx)} чел.</div>`:''}<div class="cc-bar-bg"><div class="cc-bar" style="width:${Math.min(cl.pct*2,100)}%"></div></div><div class="cc-desc">${cl.description}</div></div>`).join('')}
+      </div>
+      <div class="section">
+        <div class="section-title">Показатели</div>
+        <div class="prog-row"><span class="prog-label">Грамотность мужчин</span><span class="prog-val">${c.literacy_men||0}%</span></div>
+        <div class="prog-bg"><div class="prog-fill" style="width:${c.literacy_men||0}%;background:var(--accent)"></div></div>
+        <div class="prog-row"><span class="prog-label">Грамотность женщин</span><span class="prog-val">${c.literacy_women||0}%</span></div>
+        <div class="prog-bg"><div class="prog-fill" style="width:${c.literacy_women||0}%;background:#7c3aed"></div></div>
+        <div class="prog-row"><span class="prog-label">Урбанизация</span><span class="prog-val">${c.urban_pct||0}%</span></div>
+        <div class="prog-bg"><div class="prog-fill" style="width:${Math.min((c.urban_pct||0)*2,100)}%;background:var(--green)"></div></div>
+        <div class="stat-grid" style="margin-top:4px">
+          <div class="stat-card"><div class="sc-label">Соц. мобильность</div><div class="sc-val" style="font-size:13px">${c.social_mobility||'—'}</div></div>
+          <div class="stat-card"><div class="sc-label">Форма правления</div><div class="sc-val" style="font-size:12px;line-height:1.4">${c.government_type||'—'}</div></div>
+        </div>
+      </div>`;
+  }
+
+  else if (name==='religion') {
+    body.innerHTML = `
+      <div class="section">
+        <div class="section-title">Религиозный состав</div>
+        ${c.religions.map(r=>`<div class="rel-card"><div><div class="rel-name">${r.name}</div>${r.note?`<div class="rel-note">${r.note}</div>`:''}</div><span class="rel-pct-big">${r.pct}%</span></div><div class="prog-bg" style="margin-bottom:8px"><div class="prog-fill" style="width:${r.pct}%;background:var(--accent)"></div></div>`).join('')}
+      </div>
+      <div class="section">
+        <div class="section-title">Влияние церкви на государство</div>
+        <div class="desc-box">${c.church_state_influence||'—'}</div>
+      </div>
+      <div class="section">
+        <div class="section-title">Главная религия</div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="sc-label">Вера</div><div class="sc-val" style="font-size:14px">${c.main_religion||'—'}</div></div>
+          <div class="stat-card"><div class="sc-label">Доля</div><div class="sc-val">${c.main_religion_pct||'—'}%</div></div>
+        </div>
+        ${c.religion_note?`<div style="font-size:12px;color:var(--text3);margin-top:8px;font-style:italic;padding:8px;background:var(--surface2);border-radius:6px">${c.religion_note}</div>`:''}
+      </div>`;
+  }
+
+  else if (name==='trade') {
+    body.innerHTML = `
+      <div class="section">
+        <div class="section-title">Торговля</div>
+        <div class="trade-grid">
+          <div><div class="trade-col-title exp">↑ Экспорт</div>${c.exports.map(e=>`<div class="trade-item"><div class="ti-name">${e.item}</div><div class="ti-note">${e.note}</div></div>`).join('')}</div>
+          <div><div class="trade-col-title imp">↓ Импорт</div>${c.imports.map(i=>`<div class="trade-item"><div class="ti-name">${i.item}</div><div class="ti-note">${i.note}</div></div>`).join('')}</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Военная мощь</div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="sc-label">Армия</div><div class="sc-val">${c.army?c.army+' тыс.':'—'}</div></div>
+          <div class="stat-card"><div class="sc-label">Флот</div><div class="sc-val">${c.navy||'—'} кор.</div></div>
+          <div class="stat-card"><div class="sc-label">Колонии</div><div class="sc-val">${c.colonies||0}</div></div>
+          <div class="stat-card"><div class="sc-label">Роль в мире</div><div class="sc-val" style="font-size:13px">${c.power_level||'—'}</div></div>
+        </div>
+      </div>`;
+  }
+
+  else if (name==='history') {
+    body.innerHTML = `
+      <div class="section">
+        <div class="section-title">Ключевые события</div>
+        <div class="timeline">
+          ${c.timeline.map(t=>`<div class="tl-item"><div class="tl-dot ${t.importance==='high'?'high':''}"></div><div class="tl-year">${t.year}</div><div class="tl-event">${t.event}</div></div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  else if (name==='analysis') {
+    body.innerHTML = `
+      <div class="section">
+        <div class="section-title">Сильные и слабые стороны</div>
+        <div class="sw-grid">
+          <div class="sw-card str"><div class="sw-head">Сильные стороны</div>${c.strengths.map(s=>`<div class="sw-item">${s.text}</div>`).join('')}</div>
+          <div class="sw-card weak"><div class="sw-head">Слабые стороны</div>${c.weaknesses.map(w=>`<div class="sw-item">${w.text}</div>`).join('')}</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Сравнение с лидером (Нидерланды 1700)</div>
+        ${[
+          {label:'Зарплата г/день',val:c.wage_silver||0,max:12.5,unit:'г'},
+          {label:'Грамотность мужчин',val:c.literacy_men||0,max:65,unit:'%'},
+          {label:'Урбанизация',val:c.urban_pct||0,max:50,unit:'%'},
+          {label:'Продолж. жизни',val:c.life_expectancy||0,max:39,unit:'лет'},
+        ].map(m=>`<div class="prog-row"><span class="prog-label">${m.label}</span><span class="prog-val">${m.val}${m.unit}</span></div><div class="prog-bg"><div class="prog-fill" style="width:${Math.min(m.val/m.max*100,100).toFixed(0)}%;background:${m.val>=m.max?'var(--green)':'var(--accent)'}"></div></div>`).join('')}
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">* 100% = уровень Нидерландов в 1700 году</div>
+      </div>
+      <div class="section"><div class="section-title">Источники</div><div class="src-box">${c.data_sources||'Maddison Project Database 2020'}</div></div>`;
+  }
+}
+
+function fp(n) {
+  if(!n) return '—';
+  if(n>=1000000) return (n/1000000).toFixed(1)+' млн';
+  if(n>=1000) return (n/1000).toFixed(0)+' тыс.';
+  return n.toString();
+}
+
+function rb(level) {
+  if(!level) return '';
+  const m={'высокая':['rel-high','🟢 Высокая'],'средняя':['rel-mid','🟡 Средняя'],'низкая':['rel-low','🔴 Низкая']};
+  const [cls,label]=m[level]||['rel-mid',level];
+  return `<span class="reliability ${cls}">${label} достоверность</span>`;
+}
+</script>
+</body>
+</html>
